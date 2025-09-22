@@ -1,0 +1,103 @@
+# Backuper 配置文件示例
+# 
+# 这个文件展示了如何配置 rclone 和 cron 来自动化备份
+
+# ==================== Rclone 配置 ====================
+
+# 1. 配置 rclone（以 S3 为例）
+# 运行以下命令配置 rclone：
+# rclone config
+
+# 示例 rclone 配置内容（~/.config/rclone/rclone.conf）：
+# [backup-s3]
+# type = s3
+# provider = AWS
+# access_key_id = YOUR_ACCESS_KEY
+# secret_access_key = YOUR_SECRET_KEY
+# region = us-east-1
+# endpoint = 
+# location_constraint = 
+
+# 2. 测试 rclone 配置
+# rclone ls backup-s3:your-bucket-name
+
+# ==================== Cron 配置 ====================
+
+# 3. 添加到 crontab（crontab -e）
+# 每日凌晨 2 点执行增量备份
+# 0 2 * * * /path/to/backuper/example-backup.sh auto >> /var/log/backuper-cron.log 2>&1
+
+# 或者分开配置：
+# 每日凌晨 2 点执行增量备份（周一到周六）
+# 0 2 * * 1-6 /path/to/backuper/example-backup.sh incremental >> /var/log/backuper-cron.log 2>&1
+
+# 每周日凌晨 1 点执行全量备份
+# 0 1 * * 0 /path/to/backuper/example-backup.sh full >> /var/log/backuper-cron.log 2>&1
+
+# ==================== Systemd 配置（可选）====================
+
+# 4. 创建 systemd 服务（/etc/systemd/system/backuper.service）
+# [Unit]
+# Description=PVE Backup Server Chunk Data Backup
+# After=network.target
+# 
+# [Service]
+# Type=oneshot
+# User=root
+# WorkingDirectory=/path/to/backuper
+# ExecStart=/path/to/backuper/example-backup.sh auto
+# StandardOutput=journal
+# StandardError=journal
+
+# 创建 systemd 定时器（/etc/systemd/system/backuper.timer）
+# [Unit]
+# Description=Run backuper daily
+# Requires=backuper.service
+# 
+# [Timer]
+# OnCalendar=daily
+# Persistent=true
+# 
+# [Install]
+# WantedBy=timers.target
+
+# 启用定时器：
+# systemctl daemon-reload
+# systemctl enable backuper.timer
+# systemctl start backuper.timer
+
+# ==================== 监控配置 ====================
+
+# 5. 日志轮转配置（/etc/logrotate.d/backuper）
+# /var/log/backuper.log {
+#     daily
+#     missingok
+#     rotate 30
+#     compress
+#     delaycompress
+#     notifempty
+#     create 0644 root root
+# }
+
+# ==================== 环境变量配置 ====================
+
+# 6. 可选的环境变量配置（在 ~/.bashrc 或 /etc/environment 中）
+# export RCLONE_CONFIG=/root/.config/rclone/rclone.conf
+# export BACKUPER_TEMP_PATH=/tmp/backuper
+# export BACKUPER_LOG_PATH=/var/log/backuper.log
+
+# ==================== 配置验证 ====================
+
+# 7. 验证配置
+# 
+# 检查 PVE chunk 目录：
+# ls -la /var/lib/vz/backup/.chunks/
+# 
+# 测试 rclone 连接：
+# rclone ls backup-remote:
+# 
+# 手动运行备份测试：
+# /path/to/backuper/example-backup.sh full
+# 
+# 检查备份结果：
+# rclone ls backup-remote:pve/chunks/
