@@ -86,7 +86,7 @@ func (r *RcloneStorage) ListFiles(ctx context.Context, remotePath string) ([]Fil
 
 // DownloadFile 实现Storage接口 - 下载文件
 func (r *RcloneStorage) DownloadFile(ctx context.Context, remotePath, localPath string) error {
-	_, err := r.rcloneCommand(ctx, "copy", remotePath, filepath.Dir(localPath))
+	_, err := r.rcloneCommand(ctx, "copyto", remotePath, filepath.Dir(localPath))
 	if err != nil {
 		return fmt.Errorf("failed to download file %s to %s: %w", remotePath, localPath, err)
 	}
@@ -95,7 +95,8 @@ func (r *RcloneStorage) DownloadFile(ctx context.Context, remotePath, localPath 
 
 // UploadFile 实现Storage接口 - 上传文件
 func (r *RcloneStorage) UploadFile(ctx context.Context, localPath, remotePath string) error {
-	_, err := r.rcloneCommand(ctx, "copy", localPath, remotePath)
+	_, err := r.rcloneCommand(ctx, "copyto", localPath, remotePath)
+	// fmt.Println("UploadFile", localPath, remotePath, err)
 	if err != nil {
 		return fmt.Errorf("failed to upload file %s to %s: %w", localPath, remotePath, err)
 	}
