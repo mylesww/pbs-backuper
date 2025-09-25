@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -26,7 +27,7 @@ func NewRcloneStorage(binary, configFile string, extraArgs []string) *RcloneStor
 	}
 }
 
-// rcloneCommand 执行rclone命令的通用方法
+// rcloneCommand 执行rclone命令的通用方法，分离标准输出和错误输出
 func (r *RcloneStorage) rcloneCommand(ctx context.Context, args ...string) ([]byte, error) {
 	// 构建基础命令参数
 	cmdArgs := []string{}
@@ -42,13 +43,23 @@ func (r *RcloneStorage) rcloneCommand(ctx context.Context, args ...string) ([]by
 	// 添加命令特定参数
 	cmdArgs = append(cmdArgs, args...)
 
+	// 添加必须参数
+	cmdArgs = append(cmdArgs, "--quiet")
+	cmdArgs = append(cmdArgs, "--progress=false")
+
 	cmd := exec.CommandContext(ctx, r.binary, cmdArgs...)
-	output, err := cmd.CombinedOutput()
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+
 	if err != nil {
-		return output, fmt.Errorf("rclone command failed: %w, output: %s", err, string(output))
+		// 使用我们捕获的stderr
+		return stdout.Bytes(), fmt.Errorf("rclone command failed: %w, stderr: %s", err, stderr.String())
 	}
 
-	return output, nil
+	return stdout.Bytes(), nil
 }
 
 // ListFiles 实现Storage接口 - 列出文件
@@ -121,7 +132,7 @@ func (r *RcloneStorage) FileExists(ctx context.Context, remotePath string) (bool
 
 // GetFileContent 实现Storage接口 - 获取文件内容
 func (r *RcloneStorage) GetFileContent(ctx context.Context, remotePath string) ([]byte, error) {
-	// 使用rclone cat命令获取文件内容
+	// 使用rclone cat命令获取文件内容，现在rcloneCommand已经分离了标准输出和错误输出
 	output, err := r.rcloneCommand(ctx, "cat", remotePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get file content: %w", err)
