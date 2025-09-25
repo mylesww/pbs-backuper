@@ -83,6 +83,9 @@ jobs:
     runs-on: ubuntu-latest
     # 只有在推送 tag 时才创建 release
     if: startsWith(github.ref, 'refs/tags/')
+    # 为 release job 添加权限
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code
