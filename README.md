@@ -1,4 +1,4 @@
-# Backuper
+# PBS-Backuper
 
 PVE备份服务器chunk数据备份工具，支持增量备份和rclone云存储。
 
@@ -22,9 +22,9 @@ PVE备份服务器chunk数据备份工具，支持增量备份和rclone云存储
 
 ```bash
 git clone <仓库地址>
-cd backuper
+cd pbs-backuper
 go mod download
-go build -o backuper .
+go build -o pbs-backuper .
 ```
 
 ## 使用方法
@@ -34,7 +34,7 @@ go build -o backuper .
 执行所有chunk目录的完整备份：
 
 ```bash
-./backuper full --chunk-path /path/to/.chunk --remote-path remote:backup --prefix-digits 2
+./pbs-backuper full --chunk-path /path/to/.chunk --remote-path remote:backup --prefix-digits 2
 ```
 
 ### 增量备份
@@ -42,7 +42,7 @@ go build -o backuper .
 执行增量备份（需要先有全量备份）：
 
 ```bash
-./backuper incremental --chunk-path /path/to/.chunk --remote-path remote:backup
+./pbs-backuper incremental --chunk-path /path/to/.chunk --remote-path remote:backup
 ```
 
 ### 命令行选项
@@ -102,13 +102,13 @@ go build -o backuper .
 
 ```bash
 # 使用2位前缀分组的全量备份
-./backuper full \
+./pbs-backuper full \
   --chunk-path /var/lib/vz/backup/.chunks \
   --remote-path s3:my-bucket/pve-backups \
   --prefix-digits 2
 
 # 增量备份
-./backuper incremental \
+./pbs-backuper incremental \
   --chunk-path /var/lib/vz/backup/.chunks \
   --remote-path s3:my-bucket/pve-backups
 ```
@@ -117,7 +117,7 @@ go build -o backuper .
 
 ```bash
 # 使用自定义rclone设置和详细日志
-./backuper full \
+./pbs-backuper full \
   --chunk-path /var/lib/vz/backup/.chunks \
   --remote-path backup-remote:pve/chunks \
   --rclone-binary /usr/local/bin/rclone \
@@ -125,7 +125,7 @@ go build -o backuper .
   --rclone-args "--transfers=8,--checkers=16,--progress" \
   --prefix-digits 3 \
   --verbose \
-  --log-path /var/log/backuper.log \
+  --log-path /var/log/pbs-backuper.log \
   --timeout 2h
 ```
 
@@ -133,10 +133,10 @@ go build -o backuper .
 
 ```bash
 # 每日凌晨2点增量备份
-0 2 * * * /usr/local/bin/backuper incremental --chunk-path /var/lib/vz/backup/.chunks --remote-path s3:backup/pve
+0 2 * * * /usr/local/bin/pbs-backuper incremental --chunk-path /var/lib/vz/backup/.chunks --remote-path s3:backup/pve
 
 # 每周日凌晨1点全量备份
-0 1 * * 0 /usr/local/bin/backuper full --chunk-path /var/lib/vz/backup/.chunks --remote-path s3:backup/pve --prefix-digits 2
+0 1 * * 0 /usr/local/bin/pbs-backuper full --chunk-path /var/lib/vz/backup/.chunks --remote-path s3:backup/pve --prefix-digits 2
 ```
 
 ## 配置
@@ -161,7 +161,7 @@ rclone ls remote:bucket/path
 
 ```bash
 export RCLONE_CONFIG=/path/to/rclone.conf
-export BACKUPER_TEMP_PATH=/tmp/backuper
+export PBS_BACKUPER_TEMP_PATH=/tmp/pbs-backuper
 ```
 
 ## 监控和日志
@@ -177,10 +177,10 @@ export BACKUPER_TEMP_PATH=/tmp/backuper
 
 ```bash
 # 记录到文件和控制台
-./backuper full --chunk-path /path/to/.chunks --remote-path remote:backup --log-path /var/log/backuper.log
+./pbs-backuper full --chunk-path /path/to/.chunks --remote-path remote:backup --log-path /var/log/pbs-backuper.log
 
 # 仅控制台（默认）
-./backuper full --chunk-path /path/to/.chunks --remote-path remote:backup
+./pbs-backuper full --chunk-path /path/to/.chunks --remote-path remote:backup
 ```
 
 ## 故障排除
@@ -197,7 +197,7 @@ export BACKUPER_TEMP_PATH=/tmp/backuper
 启用详细日志来排除问题：
 
 ```bash
-./backuper full --chunk-path /path/to/.chunks --remote-path remote:backup --verbose
+./pbs-backuper full --chunk-path /path/to/.chunks --remote-path remote:backup --verbose
 ```
 
 ### 恢复
@@ -244,7 +244,7 @@ go test ./...
 ### 构建
 
 ```bash
-go build -o backuper .
+go build -o pbs-backuper .
 ```
 
 ### 贡献

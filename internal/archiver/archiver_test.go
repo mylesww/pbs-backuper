@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"backuper/internal/models"
+	"pbs-backuper/internal/models"
 )
 
 // TestArchiveGrouping 测试压缩包分组逻辑

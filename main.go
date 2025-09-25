@@ -1,7 +1,7 @@
 package main
 
 import (
-	"backuper/cmd"
+	"pbs-backuper/cmd"
 )
 
 func main() {

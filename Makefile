@@ -7,11 +7,11 @@ help: ## 显示帮助信息
 
 # 构建
 build: ## 构建可执行文件
-	go build -o backuper .
+	go build -o pbs-backuper .
 
 # 构建优化版本
 build-release: ## 构建发布版本（优化）
-	CGO_ENABLED=0 go build -ldflags="-w -s" -o backuper .
+	CGO_ENABLED=0 go build -ldflags="-w -s" -o pbs-backuper .
 
 # 运行测试
 test: ## 运行所有测试
@@ -24,7 +24,7 @@ test-coverage: ## 运行测试并生成覆盖率报告
 
 # 清理
 clean: ## 清理构建文件
-	rm -f backuper
+	rm -f pbs-backuper
 	rm -f coverage.out coverage.html
 
 # 安装依赖
@@ -42,11 +42,11 @@ lint: ## 运行代码检查
 
 # 安装到系统
 install: build ## 安装到系统PATH
-	sudo cp backuper /usr/local/bin/
+	sudo cp pbs-backuper /usr/local/bin/
 
 # 卸载
 uninstall: ## 从系统中卸载
-	sudo rm -f /usr/local/bin/backuper
+	sudo rm -f /usr/local/bin/pbs-backuper
 
 # 创建示例配置
 example-config: ## 创建示例配置文件
@@ -58,15 +58,15 @@ example-config: ## 创建示例配置文件
 # 配置变量
 CHUNK_PATH="/var/lib/vz/backup/.chunks"
 REMOTE_PATH="backup-remote:pve/chunks"
-TEMP_PATH="/tmp/backuper"
+TEMP_PATH="/tmp/pbs-backuper"
 RCLONE_BINARY="rclone"
 RCLONE_CONFIG="/root/.config/rclone/rclone.conf"
-LOG_PATH="/var/log/backuper.log"
+LOG_PATH="/var/log/pbs-backuper.log"
 
 # 全量备份（每周日）
 if [ $$(date +%u) -eq 7 ]; then
     echo "Running full backup..."
-    ./backuper full \
+    ./pbs-backuper full \
         --chunk-path "$$CHUNK_PATH" \
         --remote-path "$$REMOTE_PATH" \
         --temp-path "$$TEMP_PATH" \
@@ -77,7 +77,7 @@ if [ $$(date +%u) -eq 7 ]; then
         --verbose
 else
     echo "Running incremental backup..."
-    ./backuper incremental \
+    ./pbs-backuper incremental \
         --chunk-path "$$CHUNK_PATH" \
         --remote-path "$$REMOTE_PATH" \
         --temp-path "$$TEMP_PATH" \

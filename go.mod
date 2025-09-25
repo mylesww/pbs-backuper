@@ -1,4 +1,4 @@
-module backuper
+module pbs-backuper
 
 go 1.25.1
 

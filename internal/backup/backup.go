@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"backuper/internal/archiver"
-	"backuper/internal/models"
-	"backuper/internal/scanner"
-	"backuper/internal/storage"
+	"pbs-backuper/internal/archiver"
+	"pbs-backuper/internal/models"
+	"pbs-backuper/internal/scanner"
+	"pbs-backuper/internal/storage"
 )
 
 const (

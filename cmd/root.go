@@ -9,10 +9,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"backuper/internal/backup"
-	"backuper/internal/logger"
-	"backuper/internal/models"
-	"backuper/internal/storage"
+	"pbs-backuper/internal/backup"
+	"pbs-backuper/internal/logger"
+	"pbs-backuper/internal/models"
+	"pbs-backuper/internal/storage"
 )
 
 var (

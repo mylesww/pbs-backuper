@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"backuper/internal/models"
-	"backuper/internal/storage"
+	"pbs-backuper/internal/models"
+	"pbs-backuper/internal/storage"
 )
 
 // TestBackupIntegration 集成测试：测试全量和增量备份逻辑

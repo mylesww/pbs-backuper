@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"sort"
 
-	"backuper/internal/models"
+	"pbs-backuper/internal/models"
 )
 
 // ChunkScanner 负责扫描.chunk目录

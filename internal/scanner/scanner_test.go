@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"backuper/internal/models"
+	"pbs-backuper/internal/models"
 )
 
 func TestChunkScanner(t *testing.T) {
