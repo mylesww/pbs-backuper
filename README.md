@@ -1,5 +1,9 @@
 # PBS-Backuper
 
+[![Build and Release](https://github.com/mylesww/pbs-backuper/actions/workflows/build.yml/badge.svg)](https://github.com/mylesww/pbs-backuper/actions/workflows/build.yml)
+[![Release](https://img.shields.io/github/v/release/mylesww/pbs-backuper)](https://github.com/mylesww/pbs-backuper/releases/latest)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/mylesww/pbs-backuper)](https://golang.org/)
+
 PVE备份服务器chunk数据备份工具，支持增量备份和rclone云存储。
 
 ## 功能特性
@@ -12,6 +16,22 @@ PVE备份服务器chunk数据备份工具，支持增量备份和rclone云存储
 - **可配置分组**: 按十六进制前缀分组chunk目录（1-4位）
 
 ## 安装
+
+### 预编译二进制文件
+
+从 [Releases](https://github.com/mylesww/pbs-backuper/releases) 页面下载适合你系统的预编译二进制文件：
+
+- **Linux ARM64**: `pbs-backuper-linux-arm64`
+- **Linux x86_64**: `pbs-backuper-linux-amd64`
+- **macOS ARM64**: `pbs-backuper-darwin-arm64`
+- **Windows x86_64**: `pbs-backuper-windows-amd64.exe`
+
+```bash
+# 下载示例 (Linux x86_64)
+wget https://github.com/mylesww/pbs-backuper/releases/latest/download/pbs-backuper-linux-amd64
+chmod +x pbs-backuper-linux-amd64
+sudo mv pbs-backuper-linux-amd64 /usr/local/bin/pbs-backuper
+```
 
 ### 前置要求
 
