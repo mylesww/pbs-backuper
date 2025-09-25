@@ -49,17 +49,6 @@ jobs:
         with:
           go-version: '1.25.1'
 
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-${{ matrix.goos }}-${{ matrix.goarch }}-go-${{ hashFiles('**/go.sum', '**/go.mod') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.goos }}-${{ matrix.goarch }}-go-
-            ${{ runner.os }}-go-
-
       - name: Download dependencies
         run: go mod download
 
