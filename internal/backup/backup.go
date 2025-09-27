@@ -66,7 +66,7 @@ func (bm *BackupManager) RunFullBackup(ctx context.Context) (*models.BackupResul
 	// 4. 创建所有压缩包
 	checksums := make(map[string]string)
 	for _, group := range groups {
-		err := bm.processArchiveGroup(ctx, group, checksums, result)
+		err := bm.processArchiveGroup(ctx, group, checksums, result, false) // 全量备份不检查远程校验和
 		if err != nil {
 			result.ErrorArchives = append(result.ErrorArchives, group.ArchiveName)
 			result.Details[group.ArchiveName] = err.Error()
@@ -139,7 +139,7 @@ func (bm *BackupManager) RunIncrementalBackup(ctx context.Context) (*models.Back
 
 	for _, group := range groups {
 		if group.NeedsUpdate {
-			err := bm.processArchiveGroup(ctx, group, checksums, result)
+			err := bm.processArchiveGroup(ctx, group, checksums, result, true) // 增量备份检查远程校验和
 			if err != nil {
 				result.ErrorArchives = append(result.ErrorArchives, group.ArchiveName)
 				result.Details[group.ArchiveName] = err.Error()
@@ -171,7 +171,7 @@ func (bm *BackupManager) RunIncrementalBackup(ctx context.Context) (*models.Back
 }
 
 // processArchiveGroup 处理单个压缩包组
-func (bm *BackupManager) processArchiveGroup(ctx context.Context, group *models.ArchiveGroup, checksums map[string]string, result *models.BackupResult) error {
+func (bm *BackupManager) processArchiveGroup(ctx context.Context, group *models.ArchiveGroup, checksums map[string]string, result *models.BackupResult, checkRemoteChecksum bool) error {
 	// 1. 创建压缩包
 	archivePath, err := bm.archiver.CreateArchive(group)
 	if err != nil {
@@ -185,14 +185,16 @@ func (bm *BackupManager) processArchiveGroup(ctx context.Context, group *models.
 		return fmt.Errorf("failed to calculate checksum: %w", err)
 	}
 
-	// 3. 检查远程校验和是否已存在且相同
+	// 3. 检查远程校验和是否已存在且相同（根据参数决定是否检查）
 	remoteSha256Path := filepath.Join(bm.config.RemotePath, group.ArchiveName+".sha256")
 	needsUpload := true
 
-	if remoteChecksum, err := bm.getRemoteChecksum(ctx, remoteSha256Path); err == nil {
-		if remoteChecksum == checksum {
-			needsUpload = false
-			result.Details[group.ArchiveName] = "checksum unchanged, skipped upload"
+	if checkRemoteChecksum {
+		if remoteChecksum, err := bm.getRemoteChecksum(ctx, remoteSha256Path); err == nil {
+			if remoteChecksum == checksum {
+				needsUpload = false
+				result.Details[group.ArchiveName] = "checksum unchanged, skipped upload"
+			}
 		}
 	}
 
