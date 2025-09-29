@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -16,21 +18,25 @@ type RcloneStorage struct {
 	binary     string   // rclone二进制路径
 	configFile string   // rclone配置文件路径
 	extraArgs  []string // 额外参数
+	verbose    bool     // 详细输出模式
 }
 
 // NewRcloneStorage 创建rclone存储实例
-func NewRcloneStorage(binary, configFile string, extraArgs []string) *RcloneStorage {
+func NewRcloneStorage(binary, configFile string, extraArgs []string, verbose bool) *RcloneStorage {
 	return &RcloneStorage{
 		binary:     binary,
 		configFile: configFile,
 		extraArgs:  extraArgs,
+		verbose:    verbose,
 	}
 }
 
 // rcloneCommand 执行rclone命令的通用方法，分离标准输出和错误输出
-func (r *RcloneStorage) rcloneCommand(ctx context.Context, args ...string) ([]byte, error) {
+func (r *RcloneStorage) rcloneCommand(ctx context.Context, command string, args ...string) ([]byte, error) {
 	// 构建基础命令参数
 	cmdArgs := []string{}
+
+	cmdArgs = append(cmdArgs, command)
 
 	// 添加配置文件参数
 	if r.configFile != "" {
@@ -43,15 +49,31 @@ func (r *RcloneStorage) rcloneCommand(ctx context.Context, args ...string) ([]by
 	// 添加命令特定参数
 	cmdArgs = append(cmdArgs, args...)
 
-	// 添加必须参数
-	cmdArgs = append(cmdArgs, "--quiet")
-	cmdArgs = append(cmdArgs, "--progress=false")
+	// 根据 verbose 模式和命令类型添加参数
+	if command == "cat" {
+		// cat 命令总是添加这些参数
+		cmdArgs = append(cmdArgs, "--quiet")
+		cmdArgs = append(cmdArgs, "--progress=false")
+	} else if !r.verbose {
+		// 非 verbose 模式下，其他命令添加这些参数
+		cmdArgs = append(cmdArgs, "--quiet")
+		cmdArgs = append(cmdArgs, "--progress=false")
+	}
 
 	cmd := exec.CommandContext(ctx, r.binary, cmdArgs...)
 
 	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+
+	if r.verbose && command != "cat" {
+		// verbose 模式下且非 cat 命令，实时输出到控制台
+		cmd.Stdout = io.MultiWriter(&stdout, os.Stdout)
+		cmd.Stderr = io.MultiWriter(&stderr, os.Stderr)
+	} else {
+		// 非 verbose 模式或 cat 命令，只捕获输出
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+	}
+
 	err := cmd.Run()
 
 	if err != nil {

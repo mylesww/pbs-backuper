@@ -179,7 +179,7 @@ func runBackup(config *models.Config) error {
 	}
 
 	// 创建存储实例
-	store := storage.NewRcloneStorage(config.RcloneBinary, config.RcloneConfig, config.RcloneArgs)
+	store := storage.NewRcloneStorage(config.RcloneBinary, config.RcloneConfig, config.RcloneArgs, config.Verbose)
 
 	// 创建备份管理器
 	manager := backup.NewBackupManager(config, store)
