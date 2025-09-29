@@ -57,7 +57,7 @@ func TestRcloneCommand(t *testing.T) {
 	}
 
 	// 创建RcloneStorage实例
-	rclone := NewRcloneStorage("rclone", "", []string{})
+	rclone := NewRcloneStorage("rclone", "", []string{}, false)
 
 	// 测试一个简单的rclone命令，如果rclone不可用则跳过
 	ctx := context.Background()
