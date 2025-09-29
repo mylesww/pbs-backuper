@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"pbs-backuper/internal/archiver"
+	"pbs-backuper/internal/logger"
 	"pbs-backuper/internal/models"
 	"pbs-backuper/internal/scanner"
 	"pbs-backuper/internal/storage"
@@ -66,10 +67,13 @@ func (bm *BackupManager) RunFullBackup(ctx context.Context) (*models.BackupResul
 	// 4. 创建所有压缩包
 	checksums := make(map[string]string)
 	for _, group := range groups {
-		err := bm.processArchiveGroup(ctx, group, checksums, result, false) // 全量备份不检查远程校验和
+		err := bm.processArchiveGroup(ctx, group, checksums, result, false)
 		if err != nil {
+			logger.Error(fmt.Sprintf("处理压缩包组失败: %s, %s", group.ArchiveName, err))
 			result.ErrorArchives = append(result.ErrorArchives, group.ArchiveName)
 			result.Details[group.ArchiveName] = err.Error()
+		} else {
+			logger.Info(fmt.Sprintf("成功处理压缩包组: %s", group.ArchiveName))
 		}
 	}
 
@@ -141,8 +145,11 @@ func (bm *BackupManager) RunIncrementalBackup(ctx context.Context) (*models.Back
 		if group.NeedsUpdate {
 			err := bm.processArchiveGroup(ctx, group, checksums, result, true) // 增量备份检查远程校验和
 			if err != nil {
+				logger.Error(fmt.Sprintf("处理压缩包组失败: %s", group.ArchiveName))
 				result.ErrorArchives = append(result.ErrorArchives, group.ArchiveName)
 				result.Details[group.ArchiveName] = err.Error()
+			} else {
+				logger.Info(fmt.Sprintf("成功处理压缩包组: %s", group.ArchiveName))
 			}
 		} else {
 			result.SkippedArchives++
@@ -173,6 +180,7 @@ func (bm *BackupManager) RunIncrementalBackup(ctx context.Context) (*models.Back
 // processArchiveGroup 处理单个压缩包组
 func (bm *BackupManager) processArchiveGroup(ctx context.Context, group *models.ArchiveGroup, checksums map[string]string, result *models.BackupResult, checkRemoteChecksum bool) error {
 	// 1. 创建压缩包
+	logger.Debug(fmt.Sprintf("Creating archive: %s", group.ArchiveName))
 	archivePath, err := bm.archiver.CreateArchive(group)
 	if err != nil {
 		return fmt.Errorf("failed to create archive: %w", err)
@@ -180,6 +188,7 @@ func (bm *BackupManager) processArchiveGroup(ctx context.Context, group *models.
 	defer os.Remove(archivePath) // 清理临时文件
 
 	// 2. 计算校验和
+	logger.Debug(fmt.Sprintf("Calculating checksum for: %s", group.ArchiveName))
 	checksum, err := bm.archiver.CalculateChecksum(archivePath)
 	if err != nil {
 		return fmt.Errorf("failed to calculate checksum: %w", err)
@@ -200,6 +209,7 @@ func (bm *BackupManager) processArchiveGroup(ctx context.Context, group *models.
 
 	if needsUpload {
 		// 4. 上传压缩包
+		logger.Debug(fmt.Sprintf("Uploading archive: %s", group.ArchiveName))
 		remoteArchivePath := filepath.Join(bm.config.RemotePath, group.ArchiveName)
 		err = bm.storage.UploadFile(ctx, archivePath, remoteArchivePath)
 		if err != nil {
@@ -207,17 +217,21 @@ func (bm *BackupManager) processArchiveGroup(ctx context.Context, group *models.
 		}
 		result.UploadedFiles = append(result.UploadedFiles, group.ArchiveName)
 
-		// 5. 创建并上传校验和文件
+		// 5. 创建校验和文件
+		logger.Debug(fmt.Sprintf("Creating checksum for: %s", group.ArchiveName))
 		checksumPath, err := bm.archiver.CreateChecksumFile(archivePath, checksum)
 		if err != nil {
 			return fmt.Errorf("failed to create checksum file: %w", err)
 		}
 		defer os.Remove(checksumPath) // 清理临时文件
 
+		// 6. 上传校验和文件
+		logger.Debug(fmt.Sprintf("Uploading checksum for: %s", group.ArchiveName))
 		err = bm.storage.UploadFile(ctx, checksumPath, remoteSha256Path)
 		if err != nil {
 			return fmt.Errorf("failed to upload checksum file: %w", err)
 		}
+
 		result.UploadedFiles = append(result.UploadedFiles, group.ArchiveName+".sha256")
 
 		result.UpdatedArchives++

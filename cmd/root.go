@@ -213,7 +213,7 @@ func runBackup(config *models.Config) error {
 	}
 
 	if err != nil {
-		logger.Errorf("备份失败: %v", err)
+		logger.Error(fmt.Sprintf("备份失败: %v", err))
 		return fmt.Errorf("备份失败: %w", err)
 	}
 
@@ -244,22 +244,22 @@ func printBackupResult(result *models.BackupResult, verbose bool) {
 		}
 	}
 
-	if verbose && len(result.Details) > 0 {
-		fmt.Printf("\n详细结果:\n")
-		for archive, detail := range result.Details {
-			fmt.Printf("  %s: %s\n", archive, detail)
-		}
-	}
+	// if verbose && len(result.Details) > 0 {
+	// 	fmt.Printf("\n详细结果:\n")
+	// 	for archive, detail := range result.Details {
+	// 		fmt.Printf("  %s: %s\n", archive, detail)
+	// 	}
+	// }
 
-	if len(result.UploadedFiles) > 0 {
-		fmt.Printf("\n已上传文件:\n")
-		for _, file := range result.UploadedFiles {
-			fmt.Printf("  - %s\n", file)
-		}
-	}
+	// if len(result.UploadedFiles) > 0 {
+	// 	fmt.Printf("\n已上传文件:\n")
+	// 	for _, file := range result.UploadedFiles {
+	// 		fmt.Printf("  - %s\n", file)
+	// 	}
+	// }
 
 	if len(result.ErrorArchives) > 0 {
-		logger.Warnf("备份完成，但有%d个错误", len(result.ErrorArchives))
+		logger.Warn(fmt.Sprintf("备份完成，但有%d个错误", len(result.ErrorArchives)))
 	} else {
 		fmt.Printf("\n备份成功完成！\n")
 	}

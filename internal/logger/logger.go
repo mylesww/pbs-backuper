@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -10,6 +9,7 @@ import (
 )
 
 var Logger *logrus.Logger
+var FileLogger *logrus.Logger
 
 // InitLogger 初始化日志系统
 func InitLogger(verbose bool, logPath string) error {
@@ -43,12 +43,26 @@ func InitLogger(verbose bool, logPath string) error {
 			return err
 		}
 
-		// 同时输出到文件和控制台
-		multiWriter := io.MultiWriter(os.Stdout, logFile)
-		Logger.SetOutput(multiWriter)
+		// 控制台日志实例
+		Logger.SetOutput(os.Stdout)
+
+		// 文件日志实例
+		FileLogger = logrus.New()
+		FileLogger.SetFormatter(&logrus.TextFormatter{
+			FullTimestamp:   true,
+			TimestampFormat: "2006-01-02 15:04:05",
+			DisableColors:   true, // 文件日志禁用颜色
+		})
+		if verbose {
+			FileLogger.SetLevel(logrus.DebugLevel)
+		} else {
+			FileLogger.SetLevel(logrus.InfoLevel)
+		}
+		FileLogger.SetOutput(logFile)
 	} else {
 		// 只输出到控制台
 		Logger.SetOutput(os.Stdout)
+		FileLogger = nil
 	}
 
 	return nil
@@ -68,6 +82,11 @@ func GetLogger() *logrus.Logger {
 	return Logger
 }
 
+// GetFileLogger 获取文件日志实例
+func GetFileLogger() *logrus.Logger {
+	return FileLogger
+}
+
 // WithField 创建带字段的日志条目
 func WithField(key string, value interface{}) *logrus.Entry {
 	return GetLogger().WithField(key, value)
@@ -78,54 +97,44 @@ func WithFields(fields logrus.Fields) *logrus.Entry {
 	return GetLogger().WithFields(fields)
 }
 
-// Info 记录信息级别日志
+// Info 记录信息级别日志（控制台）
 func Info(args ...interface{}) {
 	GetLogger().Info(args...)
 }
 
-// Infof 记录格式化信息级别日志
+// Infof 记录格式化信息级别日志（文件）
 func Infof(format string, args ...interface{}) {
-	GetLogger().Infof(format, args...)
+	if FileLogger != nil {
+		FileLogger.Infof(format, args...)
+	}
 }
 
-// Debug 记录调试级别日志
+// Debug 记录调试级别日志（控制台）
 func Debug(args ...interface{}) {
 	GetLogger().Debug(args...)
 }
 
-// Debugf 记录格式化调试级别日志
+// Debugf 记录格式化调试级别日志（文件）
 func Debugf(format string, args ...interface{}) {
-	GetLogger().Debugf(format, args...)
+	if FileLogger != nil {
+		FileLogger.Debugf(format, args...)
+	}
 }
 
-// Warn 记录警告级别日志
+// Warn 记录警告级别日志（控制台和文件）
 func Warn(args ...interface{}) {
 	GetLogger().Warn(args...)
+	if FileLogger != nil {
+		FileLogger.Warn(args...)
+	}
 }
 
-// Warnf 记录格式化警告级别日志
-func Warnf(format string, args ...interface{}) {
-	GetLogger().Warnf(format, args...)
-}
-
-// Error 记录错误级别日志
+// Error 记录错误级别日志（控制台和文件）
 func Error(args ...interface{}) {
 	GetLogger().Error(args...)
-}
-
-// Errorf 记录格式化错误级别日志
-func Errorf(format string, args ...interface{}) {
-	GetLogger().Errorf(format, args...)
-}
-
-// Fatal 记录致命错误日志并退出程序
-func Fatal(args ...interface{}) {
-	GetLogger().Fatal(args...)
-}
-
-// Fatalf 记录格式化致命错误日志并退出程序
-func Fatalf(format string, args ...interface{}) {
-	GetLogger().Fatalf(format, args...)
+	if FileLogger != nil {
+		FileLogger.Error(args...)
+	}
 }
 
 // LogBackupStart 记录备份开始
@@ -158,13 +167,4 @@ func LogArchiveOperation(archiveName string, operation string, duration time.Dur
 		"duration":  duration.String(),
 		"size":      size,
 	}).Debug("Archive operation completed")
-}
-
-// LogFileOperation 记录文件操作
-func LogFileOperation(fileName string, operation string, size int64) {
-	WithFields(logrus.Fields{
-		"file":      fileName,
-		"operation": operation,
-		"size":      size,
-	}).Debug("File operation completed")
 }
