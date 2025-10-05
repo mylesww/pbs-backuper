@@ -19,6 +19,8 @@ import (
 const (
 	MetadataFileName = "backup-metadata.json"
 	MetadataVersion  = 1
+	ChunkDirName     = "chunk"
+	Sha256DirName    = "sha256"
 )
 
 // BackupManager 备份管理器
@@ -194,10 +196,12 @@ func (bm *BackupManager) processArchiveGroup(ctx context.Context, group *models.
 		return fmt.Errorf("failed to calculate checksum: %w", err)
 	}
 
-	// 3. 检查远程校验和是否已存在且相同（根据参数决定是否检查）
-	remoteSha256Path := filepath.Join(bm.config.RemotePath, group.ArchiveName+".sha256")
+	// 3. 生成远程路径
+	remoteArchivePath := filepath.Join(bm.config.RemotePath, ChunkDirName, group.ArchiveName)
+	remoteSha256Path := filepath.Join(bm.config.RemotePath, Sha256DirName, group.ArchiveName+".sha256")
 	needsUpload := true
 
+	// 4. 检查远程校验和是否已存在且相同（根据参数决定是否检查）
 	if checkRemoteChecksum {
 		if remoteChecksum, err := bm.getRemoteChecksum(ctx, remoteSha256Path); err == nil {
 			if remoteChecksum == checksum {
@@ -208,16 +212,15 @@ func (bm *BackupManager) processArchiveGroup(ctx context.Context, group *models.
 	}
 
 	if needsUpload {
-		// 4. 上传压缩包
+		// 5. 上传压缩包
 		logger.Debug(fmt.Sprintf("Uploading archive: %s", group.ArchiveName))
-		remoteArchivePath := filepath.Join(bm.config.RemotePath, group.ArchiveName)
 		err = bm.storage.UploadFile(ctx, archivePath, remoteArchivePath)
 		if err != nil {
 			return fmt.Errorf("failed to upload archive: %w", err)
 		}
-		result.UploadedFiles = append(result.UploadedFiles, group.ArchiveName)
+		result.UploadedFiles = append(result.UploadedFiles, ChunkDirName+"/"+group.ArchiveName)
 
-		// 5. 创建校验和文件
+		// 6. 创建校验和文件
 		logger.Debug(fmt.Sprintf("Creating checksum for: %s", group.ArchiveName))
 		checksumPath, err := bm.archiver.CreateChecksumFile(archivePath, checksum)
 		if err != nil {
@@ -225,14 +228,14 @@ func (bm *BackupManager) processArchiveGroup(ctx context.Context, group *models.
 		}
 		defer os.Remove(checksumPath) // 清理临时文件
 
-		// 6. 上传校验和文件
+		// 7. 上传校验和文件
 		logger.Debug(fmt.Sprintf("Uploading checksum for: %s", group.ArchiveName))
 		err = bm.storage.UploadFile(ctx, checksumPath, remoteSha256Path)
 		if err != nil {
 			return fmt.Errorf("failed to upload checksum file: %w", err)
 		}
 
-		result.UploadedFiles = append(result.UploadedFiles, group.ArchiveName+".sha256")
+		result.UploadedFiles = append(result.UploadedFiles, Sha256DirName+"/"+group.ArchiveName+".sha256")
 
 		result.UpdatedArchives++
 		result.Details[group.ArchiveName] = "created and uploaded"

@@ -230,23 +230,33 @@ func verifyNoChangeBackupResult(t *testing.T, result *models.BackupResult) {
 
 // verifyRemoteStorage 验证远程存储内容
 func verifyRemoteStorage(t *testing.T, remoteDir string, expectedGroups int) {
-	entries, err := os.ReadDir(remoteDir)
-	if err != nil {
-		t.Fatalf("读取远程目录失败: %v", err)
+	var hasMetadata bool
+	var tarGzFiles int
+	var sha256Files int
+
+	// 检查主目录的元数据文件
+	metadataPath := filepath.Join(remoteDir, "backup-metadata.json")
+	if _, err := os.Stat(metadataPath); err == nil {
+		hasMetadata = true
 	}
 
-	var tarGzFiles, sha256Files int
-	var hasMetadata bool
+	// 检查chunk目录中的压缩包
+	chunkDir := filepath.Join(remoteDir, ChunkDirName)
+	if entries, err := os.ReadDir(chunkDir); err == nil {
+		for _, entry := range entries {
+			if filepath.Ext(entry.Name()) == ".gz" {
+				tarGzFiles++
+			}
+		}
+	}
 
-	for _, entry := range entries {
-		name := entry.Name()
-		switch {
-		case name == "backup-metadata.json":
-			hasMetadata = true
-		case filepath.Ext(name) == ".gz":
-			tarGzFiles++
-		case filepath.Ext(name) == ".sha256":
-			sha256Files++
+	// 检查sha256目录中的校验和文件
+	sha256Dir := filepath.Join(remoteDir, Sha256DirName)
+	if entries, err := os.ReadDir(sha256Dir); err == nil {
+		for _, entry := range entries {
+			if filepath.Ext(entry.Name()) == ".sha256" {
+				sha256Files++
+			}
 		}
 	}
 

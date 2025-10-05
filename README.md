@@ -108,12 +108,15 @@ go build -o pbs-backuper .
 
 ```
 远程存储:
-├── 0000-00ff.tar.gz       # 目录0000-00ff的压缩包
-├── 0000-00ff.tar.gz.sha256 # SHA256校验和
-├── 0100-01ff.tar.gz       # 目录0100-01ff的压缩包
-├── 0100-01ff.tar.gz.sha256 # SHA256校验和
-├── ...
-└── backup-metadata.json   # 备份元数据和文件树
+├── backup-metadata.json   # 备份元数据和文件树
+├── chunk/                 # 压缩包目录
+│   ├── 0000-00ff.tar.gz   # 目录0000-00ff的压缩包
+│   ├── 0100-01ff.tar.gz   # 目录0100-01ff的压缩包
+│   └── ...
+└── sha256/                # 校验和文件目录
+    ├── 0000-00ff.tar.gz.sha256  # SHA256校验和
+    ├── 0100-01ff.tar.gz.sha256  # SHA256校验和
+    └── ...
 ```
 
 ## 使用示例
@@ -230,6 +233,15 @@ export PBS_BACKUPER_TEMP_PATH=/tmp/pbs-backuper
 4. 重新运行备份（增量备份可以安全重试）
 
 ## 架构
+
+### 存储结构
+
+工具采用分离的目录结构来组织备份文件：
+
+- **chunk/**: 存储所有压缩包文件(.tar.gz)
+- **sha256/**: 存储所有校验和文件(.sha256)
+- **backup-metadata.json**: 存储备份元数据和文件树信息
+
 
 ### 组件
 
